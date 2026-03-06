@@ -30,6 +30,7 @@ export const DEFAULT_APP_OPTIONS: AppOptions = {
     'CommunityMembersModule',
     'CommunityTimelineModule',
     'RetweetersModule',
+    'RuntimeLogsModule',
   ],
   dateTimeFormat: 'YYYY-MM-DD HH:mm:ss Z',
   filenamePattern: '{screen_name}_{id}_{type}_{num}_{date}.{ext}',
@@ -54,6 +55,7 @@ export const THEMES = [
 ] as const;
 
 const LOCAL_STORAGE_KEY = packageJson.name;
+const LEGACY_LOCAL_STORAGE_KEYS = ['twitter-web-exporter'];
 
 /**
  * Persist app options to browser local storage.
@@ -84,9 +86,37 @@ export class AppOptionsManager {
    * Read app options from local storage.
    */
   private loadAppOptions() {
+    let migratedFromLegacy = false;
+    const currentRaw = localStorage.getItem(LOCAL_STORAGE_KEY);
+    const parsedCurrent = safeJSONParse(currentRaw || '{}');
+    const currentOptions =
+      parsedCurrent && typeof parsedCurrent === 'object' ? (parsedCurrent as AppOptions) : {};
+    let loadedOptions: AppOptions = currentOptions;
+    const looksLikeFreshDefaultOptions =
+      !!currentRaw &&
+      isEqual(
+        currentOptions.disabledExtensions ?? [],
+        DEFAULT_APP_OPTIONS.disabledExtensions ?? [],
+      ) &&
+      currentOptions.version === packageJson.version;
+
+    if (!currentRaw || looksLikeFreshDefaultOptions) {
+      for (const legacyKey of LEGACY_LOCAL_STORAGE_KEYS) {
+        const legacyRaw = localStorage.getItem(legacyKey);
+        if (!legacyRaw) continue;
+        const legacyOptions = safeJSONParse(legacyRaw);
+        if (legacyOptions && typeof legacyOptions === 'object') {
+          loadedOptions = legacyOptions as AppOptions;
+          migratedFromLegacy = true;
+          logger.info(`App options migrated from legacy storage key: ${legacyKey}`);
+          break;
+        }
+      }
+    }
+
     this.appOptions = {
       ...this.appOptions,
-      ...safeJSONParse(localStorage.getItem(LOCAL_STORAGE_KEY) || '{}'),
+      ...loadedOptions,
     };
 
     const oldVersion = this.appOptions.version ?? '';
@@ -100,6 +130,10 @@ export class AppOptionsManager {
         'ListTimelineModule',
       ];
       logger.info(`App options migrated from v${oldVersion} to v${newVersion}`);
+      setTimeout(() => this.saveAppOptions(), 0);
+    }
+
+    if (migratedFromLegacy) {
       setTimeout(() => this.saveAppOptions(), 0);
     }
 

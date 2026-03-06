@@ -1,11 +1,15 @@
 {
-  "name": "twitter-web-exporter",
-  "description": "Export tweets, bookmarks, lists and much more from Twitter(X) web app.",
-  "version": "1.4.0",
-  "author": "prin <hi@prin.studio>",
+  "name": "twitter-web-exporter-snapshot-diff",
+  "description": "Fork of twitter-web-exporter with Followers/Following snapshot comparison.",
+  "version": "1.4.0-fork.1",
+  "author": "uybixd",
   "license": "MIT",
-  "homepage": "https://github.com/prinsss/twitter-web-exporter",
-  "bugs": "https://github.com/prinsss/twitter-web-exporter/issues",
+  "homepage": "https://github.com/uybixd/twitter-web-exporter-diff",
+  "bugs": "https://github.com/uybixd/twitter-web-exporter-diff/issues",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/uybixd/twitter-web-exporter-diff.git"
+  },
   "private": true,
   "type": "module",
   "scripts": {
